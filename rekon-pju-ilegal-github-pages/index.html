@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#20313d">
+  <meta name="description" content="Aplikasi monitoring PJU ilegal dan tagihan susulan berdasarkan data Pemda Januari.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <title>Rekon PJU Ilegal</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17212b;
+      --muted: #667085;
+      --line: #d8dee8;
+      --panel: #ffffff;
+      --soft: #f3f6f9;
+      --field: #f8fafc;
+      --green: #247b5b;
+      --green-soft: #dff5ec;
+      --amber: #a86500;
+      --amber-soft: #fff0d1;
+      --red: #b42318;
+      --red-soft: #ffe3df;
+      --blue: #245a9c;
+      --blue-soft: #e1efff;
+      --teal: #0d6b72;
+      --shadow: 0 18px 40px rgba(18, 33, 49, .09);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: #eef2f5; color: var(--ink); }
+    body { overflow-x: hidden; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .app { min-height: 100vh; display: grid; grid-template-columns: 248px minmax(0, 1fr); }
+    .sidebar { background: #20313d; color: #f6fbff; padding: 20px 16px; display: flex; flex-direction: column; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 6px 4px 14px; border-bottom: 1px solid rgba(255,255,255,.16); }
+    .logo { width: 42px; height: 42px; border-radius: 8px; background: #ffd166; color: #28323b; display: grid; place-items: center; box-shadow: inset 0 -8px 0 rgba(0,0,0,.08); }
+    .logo svg, .icon svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .brand strong { display: block; font-size: 15px; letter-spacing: 0; }
+    .brand span { display: block; color: #bdd0dc; font-size: 12px; margin-top: 2px; }
+    .nav { display: grid; gap: 6px; }
+    .nav button { border: 0; border-radius: 8px; color: #d7e5ef; background: transparent; padding: 10px 11px; display: flex; align-items: center; gap: 10px; text-align: left; }
+    .nav button.active, .nav button:hover { background: rgba(255,255,255,.12); color: #fff; }
+    .side-box { margin-top: auto; padding: 14px; border: 1px solid rgba(255,255,255,.18); border-radius: 8px; background: rgba(255,255,255,.08); color: #dcebf4; font-size: 13px; line-height: 1.45; }
+    .main { min-width: 0; display: flex; flex-direction: column; }
+    .topbar { min-height: 72px; padding: 14px 22px; background: rgba(255,255,255,.88); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); display: flex; gap: 16px; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 5; }
+    .title h1 { margin: 0; font-size: 22px; line-height: 1.15; letter-spacing: 0; }
+    .title p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+    .btn { border: 1px solid var(--line); background: #fff; color: var(--ink); min-height: 38px; border-radius: 8px; padding: 8px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; }
+    .btn.primary { background: #1f6f5b; color: white; border-color: #1f6f5b; }
+    .btn.danger { color: var(--red); border-color: #ffc1ba; background: #fff7f5; }
+    .btn.icon-only { width: 38px; padding: 8px; }
+    .btn:hover { filter: brightness(.98); }
+    .content { padding: 18px 22px 28px; display: grid; gap: 16px; }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 12px; }
+    .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; box-shadow: var(--shadow); min-height: 94px; }
+    .stat span { color: var(--muted); font-size: 12px; }
+    .stat strong { display: block; margin-top: 8px; font-size: 28px; letter-spacing: 0; }
+    .stat small { color: var(--muted); }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(340px, .85fr); gap: 16px; align-items: start; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); min-width: 0; overflow: hidden; }
+    .panel-head { padding: 14px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; justify-content: space-between; align-items: center; }
+    .panel-head h2 { margin: 0; font-size: 15px; letter-spacing: 0; }
+    .panel-head p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+    .filters { padding: 12px 14px; display: grid; grid-template-columns: minmax(190px, 1fr) 150px 150px 150px 132px; gap: 10px; border-bottom: 1px solid var(--line); background: #fbfcfd; }
+    .field { display: grid; gap: 6px; }
+    label { font-size: 12px; color: #475467; font-weight: 650; }
+    input, select, textarea { width: 100%; border: 1px solid #cfd7e3; background: var(--field); color: var(--ink); border-radius: 8px; min-height: 38px; padding: 8px 10px; outline: none; }
+    textarea { resize: vertical; min-height: 76px; }
+    input:focus, select:focus, textarea:focus { border-color: #1f6f5b; box-shadow: 0 0 0 3px rgba(31,111,91,.15); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 1040px; }
+    th, td { padding: 11px 12px; border-bottom: 1px solid #e7ebf0; text-align: left; vertical-align: middle; }
+    th { font-size: 11px; color: #667085; text-transform: uppercase; letter-spacing: .03em; background: #fff; }
+    td { font-size: 13px; }
+    th:first-child, td:first-child { min-width: 78px; white-space: nowrap; }
+    th:nth-child(6), td:nth-child(6), th:nth-child(7), td:nth-child(7), th:nth-child(8), td:nth-child(8) { white-space: nowrap; }
+    tr.selected { background: #edf8f4; }
+    tr:hover { background: #f7fafb; }
+    .badge { display: inline-flex; align-items: center; min-height: 24px; padding: 3px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .badge.ok { color: var(--green); background: var(--green-soft); }
+    .badge.warn { color: var(--amber); background: var(--amber-soft); }
+    .badge.bad { color: var(--red); background: var(--red-soft); }
+    .badge.info { color: var(--blue); background: var(--blue-soft); }
+    .mini-actions { display: flex; gap: 6px; }
+    .mini-actions .btn { min-height: 32px; width: 32px; padding: 6px; }
+    .right-stack { display: grid; gap: 16px; min-width: 0; }
+    .map { padding: 14px; background: #f8faf9; }
+    .map svg { width: 100%; aspect-ratio: 16 / 10; display: block; border: 1px solid #d9e2e2; border-radius: 8px; background: #edf4f0; }
+    .marker { cursor: pointer; transition: transform .15s ease; transform-origin: center; }
+    .marker:hover { transform: scale(1.22); }
+    .road { stroke: #c7d5d7; stroke-width: 18; stroke-linecap: round; fill: none; }
+    .road-line { stroke: #ffffff; stroke-width: 2; stroke-dasharray: 10 12; fill: none; opacity: .9; }
+    .river { stroke: #b8ddf0; stroke-width: 22; stroke-linecap: round; fill: none; opacity: .9; }
+    form { padding: 14px; display: grid; gap: 12px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .full { grid-column: 1 / -1; }
+    .form-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding-top: 4px; }
+    .summary-grid { padding: 14px; display: grid; gap: 10px; }
+    .bar-row { display: grid; grid-template-columns: 112px 1fr 72px; gap: 10px; align-items: center; font-size: 13px; }
+    .bar { height: 10px; border-radius: 999px; background: #e8eef3; overflow: hidden; }
+    .bar i { display: block; height: 100%; border-radius: inherit; background: #0d6b72; }
+    .detail { padding: 14px; display: grid; gap: 10px; font-size: 13px; }
+    .detail dl { margin: 0; display: grid; grid-template-columns: 126px 1fr; gap: 8px 12px; }
+    .detail dt { color: var(--muted); }
+    .detail dd { margin: 0; font-weight: 650; }
+    .simulation-tools { padding: 12px 14px; display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 10px; border-bottom: 1px solid var(--line); background: #fbfcfd; }
+    .sim-total { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: #fff; }
+    .sim-total span { display: block; color: var(--muted); font-size: 12px; }
+    .sim-total strong { display: block; margin-top: 5px; font-size: 18px; }
+    .simulation-table table { min-width: 980px; }
+    .simulation-table tfoot td { background: #f8fafc; font-weight: 800; }
+    .empty { padding: 36px 16px; text-align: center; color: var(--muted); }
+    .toast { position: fixed; right: 18px; bottom: 18px; background: #17212b; color: #fff; border-radius: 8px; padding: 12px 14px; box-shadow: var(--shadow); opacity: 0; transform: translateY(12px); transition: .2s ease; pointer-events: none; z-index: 20; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    @media (max-width: 1180px) {
+      .app { grid-template-columns: 76px minmax(0, 1fr); }
+      .brand div:not(.logo), .nav span, .side-box { display: none; }
+      .sidebar { padding: 16px 10px; align-items: center; }
+      .brand { border-bottom: 0; padding: 0; }
+      .nav button { justify-content: center; width: 46px; height: 46px; padding: 0; }
+      .stats { grid-template-columns: repeat(2, minmax(150px, 1fr)); }
+      .workspace { grid-template-columns: 1fr; }
+      .filters, .simulation-tools { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 680px) {
+      .app { display: block; }
+      .sidebar { position: sticky; top: 0; z-index: 8; flex-direction: row; justify-content: space-between; }
+      .brand { display: none; }
+      .nav { display: flex; overflow-x: auto; width: 100%; }
+      .nav span { display: inline; }
+      .nav button { width: auto; min-width: 44px; height: 40px; padding: 8px 10px; }
+      .topbar { position: static; align-items: flex-start; flex-direction: column; }
+      .actions { width: 100%; justify-content: stretch; }
+      .actions .btn { flex: 1 1 140px; }
+      .content { padding: 14px; }
+      .stats { grid-template-columns: 1fr; }
+      .filters, .form-grid, .simulation-tools { grid-template-columns: 1fr; }
+      .title h1 { font-size: 20px; }
+      .detail dl { grid-template-columns: 1fr; gap: 4px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M8 14a6 6 0 1 1 8 0c-.8.7-1 1.5-1 2H9c0-.5-.2-1.3-1-2Z"/></svg></div>
+        <div><strong>PJU FieldOps</strong><span>Rekon ilegal pemda</span></div>
+      </div>
+      <nav class="nav" aria-label="Navigasi">
+        <button class="active" type="button"><span class="icon"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3z"/><path d="M13 21h8V11h-8z"/><path d="M13 9h8V3h-8z"/><path d="M3 21h8v-6H3z"/></svg></span><span>Dashboard</span></button>
+        <button type="button"><span class="icon"><svg viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M8 14a6 6 0 1 1 8 0c-.8.7-1 1.5-1 2H9c0-.5-.2-1.3-1-2Z"/></svg></span><span>Titik PJU</span></button>
+        <button type="button"><span class="icon"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 12-9 12S3 17 3 10a9 9 0 1 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg></span><span>Peta</span></button>
+        <button type="button"><span class="icon"><svg viewBox="0 0 24 24"><path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5Z"/><path d="M8 7h6"/><path d="M8 11h8"/><path d="M8 15h5"/></svg></span><span>Simulasi TS</span></button>
+      </nav>
+      <div class="side-box">Data awal diambil dari file PJU ILEGAL REKON DATA PEMDA (JAN). Perubahan tersimpan di browser perangkat ini.</div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <div class="title">
+          <h1>Rekon PJU Ilegal Pemda</h1>
+          <p>Monitoring titik lampu ilegal, nyala siang, kWh TS, dan estimasi tagihan susulan.</p>
+        </div>
+        <div class="actions">
+          <button class="btn" id="importBtn" type="button"><span class="icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></span>Impor CSV</button>
+          <button class="btn" id="exportBtn" type="button"><span class="icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5-5 5 5"/><path d="M12 5v12"/></svg></span>Ekspor CSV</button>
+          <button class="btn primary" id="newBtn" type="button"><span class="icon"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span>Tambah Titik</button>
+          <input id="csvInput" type="file" accept=".csv,text/csv" hidden>
+        </div>
+      </header>
+      <section class="content">
+        <div class="stats" id="dashboardPanel">
+          <div class="stat"><span>Total titik</span><strong id="totalStat">0</strong><small>Titik PJU terdata</small></div>
+          <div class="stat"><span>Total lampu</span><strong id="lampStat">0</strong><small>Jumlah lampu temuan</small></div>
+          <div class="stat"><span>Total daya</span><strong id="wattStat">0 W</strong><small>Beban temuan</small></div>
+          <div class="stat"><span>Potensi kWh TS</span><strong id="kwhStat">0</strong><small>Akumulasi kWh</small></div>
+        </div>
+        <div class="workspace">
+          <section class="panel" id="titikPanel">
+            <div class="panel-head">
+              <div><h2>Daftar Titik PJU</h2><p id="countText">Menampilkan 0 titik</p></div>
+              <button class="btn icon-only" id="resetBtn" type="button" title="Muat ulang data Excel"><span class="icon"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></span></button>
+            </div>
+            <div class="filters">
+              <div class="field"><label for="search">Cari titik</label><input id="search" type="search" placeholder="IDPEL, kecamatan, kelurahan, nama PJU"></div>
+              <div class="field"><label for="sourceFilter">Sumber</label><select id="sourceFilter"><option value="">Semua</option><option>Ilegal Eksisting</option><option>Baru Terpasang</option></select></div>
+              <div class="field"><label for="statusFilter">Keterangan</label><select id="statusFilter"></select></div>
+              <div class="field"><label for="areaFilter">Kecamatan</label><select id="areaFilter"></select></div>
+              <div class="field"><label for="sortBy">Urutkan</label><select id="sortBy"><option value="source">Sumber</option><option value="kecamatan">Kecamatan</option><option value="totalWatt">Daya terbesar</option><option value="kwhTs">kWh terbesar</option></select></div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>ID</th><th>Lokasi</th><th>Sumber</th><th>Ket</th><th>Jenis</th><th>Lampu</th><th>Daya</th><th>kWh TS</th><th>IDPEL TS</th><th>Aksi</th></tr></thead>
+                <tbody id="assetRows"></tbody>
+              </table>
+              <div class="empty" id="emptyState" hidden>Tidak ada titik yang cocok dengan filter.</div>
+            </div>
+          </section>
+          <aside class="right-stack">
+            <section class="panel" id="petaPanel">
+              <div class="panel-head"><div><h2>Peta Titik</h2><p>Klik marker untuk membuka detail</p></div></div>
+              <div class="map">
+                <svg id="mapSvg" viewBox="0 0 640 400" role="img" aria-label="Peta skematik titik PJU">
+                  <path class="river" d="M-20 310 C150 240 218 356 360 286 S535 190 670 220"/>
+                  <path class="road" d="M40 70 C160 112 232 96 330 148 S492 186 604 144"/>
+                  <path class="road-line" d="M40 70 C160 112 232 96 330 148 S492 186 604 144"/>
+                  <path class="road" d="M120 365 C135 258 188 205 285 185 S482 80 520 30"/>
+                  <path class="road-line" d="M120 365 C135 258 188 205 285 185 S482 80 520 30"/>
+                  <path class="road" d="M38 210 H604"/>
+                  <path class="road-line" d="M38 210 H604"/>
+                  <g fill="#dbe9df" stroke="#bdd0c6"><rect x="52" y="106" width="74" height="54" rx="6"/><rect x="436" y="238" width="112" height="76" rx="6"/><rect x="242" y="264" width="76" height="52" rx="6"/><rect x="536" y="62" width="58" height="46" rx="6"/></g>
+                  <g id="markers"></g>
+                </svg>
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><h2>Ringkasan Kecamatan</h2><p>Berdasarkan titik yang tampil</p></div></div>
+              <div class="summary-grid" id="areaBars"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><h2 id="detailTitle">Detail Titik</h2><p>Data rekonsiliasi dan TS</p></div></div>
+              <div class="detail" id="detailPanel"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><h2 id="formTitle">Tambah Titik</h2><p>Update data hasil rekonsiliasi</p></div></div>
+              <form id="assetForm">
+                <input id="recordId" type="hidden">
+                <div class="form-grid">
+                  <div class="field"><label for="id">ID Titik</label><input id="id" required></div>
+                  <div class="field"><label for="source">Sumber</label><select id="source"><option>Ilegal Eksisting</option><option>Baru Terpasang</option></select></div>
+                  <div class="field"><label for="ulp">ULP</label><input id="ulp" required></div>
+                  <div class="field"><label for="kecamatan">Kecamatan</label><input id="kecamatan" required></div>
+                  <div class="field"><label for="kelurahan">Kelurahan</label><input id="kelurahan"></div>
+                  <div class="field"><label for="status">Keterangan</label><select id="status"><option>ILEGAL</option><option>NYALA SIANG</option><option>ILEGAL + NYALA SIANG</option></select></div>
+                  <div class="field"><label for="lampType">Jenis Lampu</label><select id="lampType"><option>LED</option><option>MERCURY</option></select></div>
+                  <div class="field"><label for="lampCount">Jumlah Lampu</label><input id="lampCount" type="number" min="0" step="1"></div>
+                  <div class="field"><label for="watt">Daya Lampu</label><input id="watt" type="number" min="0" step="1"></div>
+                  <div class="field"><label for="ballast">Ballast</label><input id="ballast" type="number" min="0" step="1"></div>
+                  <div class="field"><label for="totalWatt">Total Daya</label><input id="totalWatt" type="number" min="0" step="1"></div>
+                  <div class="field"><label for="kwhTs">kWh TS</label><input id="kwhTs" type="number" min="0" step="0.01"></div>
+                  <div class="field"><label for="idpelTs">IDPEL TS</label><input id="idpelTs"></div>
+                  <div class="field"><label for="namaPlg">Nama PJU</label><input id="namaPlg"></div>
+                  <div class="field"><label for="lat">Latitude</label><input id="lat" type="number" step="0.000001"></div>
+                  <div class="field"><label for="lng">Longitude</label><input id="lng" type="number" step="0.000001"></div>
+                  <div class="field full"><label for="notes">Catatan</label><textarea id="notes" placeholder="Catatan tindak lanjut, BA, atau koreksi lapangan"></textarea></div>
+                </div>
+                <div class="form-actions">
+                  <button class="btn danger" id="deleteBtn" type="button" hidden>Hapus</button>
+                  <div></div>
+                  <button class="btn" id="clearBtn" type="button">Bersihkan</button>
+                  <button class="btn primary" type="submit">Simpan</button>
+                </div>
+              </form>
+            </section>
+          </aside>
+        </div>
+        <section class="panel" id="simulasiPanel">
+          <div class="panel-head">
+            <div>
+              <h2>Simulasi Tagihan Susulan</h2>
+              <p>Perhitungan dari sheet simulasi TS, dengan harga/kWh yang bisa disesuaikan.</p>
+            </div>
+          </div>
+          <div class="simulation-tools">
+            <div class="field">
+              <label for="hargaKwh">Harga/kWh</label>
+              <input id="hargaKwh" type="number" min="0" step="0.01" value="1699.53">
+            </div>
+            <div class="sim-total"><span>Total titik</span><strong id="simTitik">0</strong></div>
+            <div class="sim-total"><span>Potensi kWh</span><strong id="simKwh">0</strong></div>
+            <div class="sim-total"><span>Estimasi RP TS</span><strong id="simRp">Rp0</strong></div>
+          </div>
+          <div class="table-wrap simulation-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Lokasi</th>
+                  <th>Jenis</th>
+                  <th>Daya</th>
+                  <th>VA/Titik</th>
+                  <th>Titik</th>
+                  <th>Jumlah VA</th>
+                  <th>Ket</th>
+                  <th>Potensi kWh</th>
+                  <th>RP TS</th>
+                </tr>
+              </thead>
+              <tbody id="simRows"></tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="4">Total Simulasi</td>
+                  <td id="simFootTitik">0</td>
+                  <td id="simFootVa">0</td>
+                  <td></td>
+                  <td id="simFootKwh">0</td>
+                  <td id="simFootRp">Rp0</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    const storageKey = "pju-rekon-ilegal-pemda-jan-v1";
+    const initialAssets = [{"id":"EX-001","source":"Ilegal Eksisting","no":1,"ulp":"KONAWE SELATAN","kecamatan":"BUKE","kelurahan":"ANDOOLO UTAMA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"NYALA SIANG","kwhTs":34.5,"idpelTs":"323700335135","namaPlg":"PJU BUKE","lat":-4.282362,"lng":122.207163,"notes":""},{"id":"EX-002","source":"Ilegal Eksisting","no":2,"ulp":"KONAWE SELATAN","kecamatan":"BUKE","kelurahan":"ANDOOLO UTAMA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"NYALA SIANG","kwhTs":34.5,"idpelTs":"323700335135","namaPlg":"PJU BUKE","lat":-4.279375,"lng":122.218269,"notes":""},{"id":"EX-003","source":"Ilegal Eksisting","no":3,"ulp":"KONAWE SELATAN","kecamatan":"BUKE","kelurahan":"ANDOOLO UTAMA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"NYALA SIANG","kwhTs":34.5,"idpelTs":"323700335135","namaPlg":"PJU BUKE","lat":-4.279073,"lng":122.218543,"notes":""},{"id":"EX-004","source":"Ilegal Eksisting","no":4,"ulp":"KONAWE SELATAN","kecamatan":"BUKE","kelurahan":"ANDOOLO UTAMA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"NYALA SIANG","kwhTs":34.5,"idpelTs":"323700335135","namaPlg":"PJU BUKE","lat":-4.295937,"lng":122.215805,"notes":""},{"id":"EX-005","source":"Ilegal Eksisting","no":5,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"PUNGGALUKU","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"NYALA SIANG","kwhTs":34.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.302393,"lng":122.474325,"notes":""},{"id":"EX-006","source":"Ilegal Eksisting","no":6,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"PUNGGALUKU","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"NYALA SIANG","kwhTs":34.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.303992,"lng":122.471292,"notes":""},{"id":"EX-007","source":"Ilegal Eksisting","no":7,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"PUNGGALUKU","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"NYALA SIANG","kwhTs":34.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.304101,"lng":122.465256,"notes":""},{"id":"EX-008","source":"Ilegal Eksisting","no":8,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"BUMI RAYA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.349579,"lng":122.18845,"notes":""},{"id":"EX-009","source":"Ilegal Eksisting","no":9,"ulp":"KONAWE SELATAN","kecamatan":"BASALA","kelurahan":"BASALA","lampType":"MERCURY","lampCount":1.0,"watt":250.0,"ballast":250.0,"totalWatt":500.0,"status":"ILEGAL","kwhTs":187.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.303343,"lng":122.056921,"notes":""},{"id":"EX-010","source":"Ilegal Eksisting","no":10,"ulp":"KONAWE SELATAN","kecamatan":"BENUA","kelurahan":"BENUA","lampType":"MERCURY","lampCount":1.0,"watt":250.0,"ballast":250.0,"totalWatt":500.0,"status":"ILEGAL","kwhTs":187.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.258477,"lng":122.125452,"notes":""},{"id":"EX-011","source":"Ilegal Eksisting","no":11,"ulp":"KONAWE SELATAN","kecamatan":"BENUA","kelurahan":"HORODOPI","lampType":"MERCURY","lampCount":1.0,"watt":250.0,"ballast":250.0,"totalWatt":500.0,"status":"ILEGAL","kwhTs":187.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.250778,"lng":122.114302,"notes":""},{"id":"EX-012","source":"Ilegal Eksisting","no":12,"ulp":"KONAWE SELATAN","kecamatan":"KOLONO","kelurahan":"KOLONO","lampType":"MERCURY","lampCount":1.0,"watt":250.0,"ballast":250.0,"totalWatt":500.0,"status":"ILEGAL","kwhTs":187.5,"idpelTs":"323710052354","namaPlg":"PJU LAINEA","lat":-4.298299,"lng":122.669149,"notes":""},{"id":"EX-013","source":"Ilegal Eksisting","no":13,"ulp":"KONAWE SELATAN","kecamatan":"KOLONO","kelurahan":"KOLONO","lampType":"MERCURY","lampCount":1.0,"watt":250.0,"ballast":250.0,"totalWatt":500.0,"status":"ILEGAL","kwhTs":187.5,"idpelTs":"323710052354","namaPlg":"PJU LAINEA","lat":-4.299713,"lng":122.691656,"notes":""},{"id":"EX-014","source":"Ilegal Eksisting","no":14,"ulp":"KONAWE SELATAN","kecamatan":"LALEMBUU","kelurahan":"ATARI INDAH","lampType":"MERCURY","lampCount":1.0,"watt":250.0,"ballast":250.0,"totalWatt":500.0,"status":"ILEGAL","kwhTs":187.5,"idpelTs":"323720044932","namaPlg":"PJU TINANGGEA","lat":-4.397789,"lng":122.09909,"notes":""},{"id":"EX-015","source":"Ilegal Eksisting","no":15,"ulp":"KONAWE SELATAN","kecamatan":"LALEMBUU","kelurahan":"ATARI JAYA","lampType":"MERCURY","lampCount":1.0,"watt":250.0,"ballast":250.0,"totalWatt":500.0,"status":"ILEGAL","kwhTs":187.5,"idpelTs":"323720044932","namaPlg":"PJU TINANGGEA","lat":-4.396327,"lng":122.098714,"notes":""},{"id":"EX-016","source":"Ilegal Eksisting","no":16,"ulp":"KONAWE SELATAN","kecamatan":"LALEMBUU","kelurahan":"ATARI JAYA","lampType":"MERCURY","lampCount":1.0,"watt":250.0,"ballast":250.0,"totalWatt":500.0,"status":"ILEGAL","kwhTs":187.5,"idpelTs":"323720044932","namaPlg":"PJU TINANGGEA","lat":-4.396246,"lng":122.097313,"notes":""},{"id":"EX-017","source":"Ilegal Eksisting","no":17,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"ONEMBUTE","lampType":"MERCURY","lampCount":0,"watt":250.0,"ballast":250.0,"totalWatt":0.0,"status":"ILEGAL","kwhTs":0.0,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.326162,"lng":122.391335,"notes":""},{"id":"EX-018","source":"Ilegal Eksisting","no":18,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"PALANGGA","lampType":"MERCURY","lampCount":1.0,"watt":250.0,"ballast":250.0,"totalWatt":500.0,"status":"ILEGAL","kwhTs":187.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.347861,"lng":122.327407,"notes":""},{"id":"EX-019","source":"Ilegal Eksisting","no":19,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"WATUMEREMBE","lampType":"MERCURY","lampCount":1.0,"watt":250.0,"ballast":250.0,"totalWatt":500.0,"status":"ILEGAL","kwhTs":187.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.343268,"lng":122.352318,"notes":""},{"id":"EX-020","source":"Ilegal Eksisting","no":20,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"WAWONGGURA","lampType":"MERCURY","lampCount":1.0,"watt":250.0,"ballast":250.0,"totalWatt":500.0,"status":"ILEGAL","kwhTs":187.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.351354,"lng":122.344174,"notes":""},{"id":"EX-021","source":"Ilegal Eksisting","no":21,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA SELATAN","kelurahan":"AMONDO","lampType":"MERCURY","lampCount":1.0,"watt":250.0,"ballast":250.0,"totalWatt":500.0,"status":"ILEGAL","kwhTs":187.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.432715,"lng":122.389808,"notes":""},{"id":"EX-022","source":"Ilegal Eksisting","no":22,"ulp":"KONAWE SELATAN","kecamatan":"WOLASI","kelurahan":"WOLASI","lampType":"MERCURY","lampCount":1.0,"watt":250.0,"ballast":250.0,"totalWatt":500.0,"status":"ILEGAL","kwhTs":187.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.194213,"lng":122.492869,"notes":""},{"id":"EX-023","source":"Ilegal Eksisting","no":23,"ulp":"KONAWE SELATAN","kecamatan":"WOLASI","kelurahan":"WOLASI","lampType":"MERCURY","lampCount":1.0,"watt":250.0,"ballast":250.0,"totalWatt":500.0,"status":"ILEGAL","kwhTs":187.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.19846,"lng":122.493087,"notes":""},{"id":"EX-024","source":"Ilegal Eksisting","no":24,"ulp":"KONAWE SELATAN","kecamatan":"WOLASI","kelurahan":"WOLASI","lampType":"MERCURY","lampCount":1.0,"watt":250.0,"ballast":250.0,"totalWatt":500.0,"status":"ILEGAL","kwhTs":187.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.200285,"lng":122.492882,"notes":""},{"id":"EX-025","source":"Ilegal Eksisting","no":25,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"AMOHALO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.124454,"lng":122.530296,"notes":""},{"id":"EX-026","source":"Ilegal Eksisting","no":26,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"AMOHALO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.124383,"lng":122.531753,"notes":""},{"id":"EX-027","source":"Ilegal Eksisting","no":27,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"AMOHALO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.125037,"lng":122.534678,"notes":""},{"id":"EX-028","source":"Ilegal Eksisting","no":28,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"AMOHALO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.123878,"lng":122.537059,"notes":""},{"id":"EX-029","source":"Ilegal Eksisting","no":29,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"AMOHALO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.127253,"lng":122.536285,"notes":""},{"id":"EX-030","source":"Ilegal Eksisting","no":30,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.114605,"lng":122.506024,"notes":""},{"id":"EX-031","source":"Ilegal Eksisting","no":31,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.114891,"lng":122.506623,"notes":""},{"id":"EX-032","source":"Ilegal Eksisting","no":32,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.11242,"lng":122.509352,"notes":""},{"id":"EX-033","source":"Ilegal Eksisting","no":33,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.111892,"lng":122.510211,"notes":""},{"id":"EX-034","source":"Ilegal Eksisting","no":34,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.11144,"lng":122.510751,"notes":""},{"id":"EX-035","source":"Ilegal Eksisting","no":35,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.109393,"lng":122.515366,"notes":""},{"id":"EX-036","source":"Ilegal Eksisting","no":36,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.109921,"lng":122.51478,"notes":""},{"id":"EX-037","source":"Ilegal Eksisting","no":37,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.111296,"lng":122.513401,"notes":""},{"id":"EX-038","source":"Ilegal Eksisting","no":38,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.112583,"lng":122.512001,"notes":""},{"id":"EX-039","source":"Ilegal Eksisting","no":39,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.11258,"lng":122.511995,"notes":""},{"id":"EX-040","source":"Ilegal Eksisting","no":40,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.114956,"lng":122.509493,"notes":""},{"id":"EX-041","source":"Ilegal Eksisting","no":41,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.12231,"lng":122.501325,"notes":""},{"id":"EX-042","source":"Ilegal Eksisting","no":42,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.120713,"lng":122.500466,"notes":""},{"id":"EX-043","source":"Ilegal Eksisting","no":43,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.121361,"lng":122.49908,"notes":""},{"id":"EX-044","source":"Ilegal Eksisting","no":44,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.123169,"lng":122.49984,"notes":""},{"id":"EX-045","source":"Ilegal Eksisting","no":45,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.12246,"lng":122.499445,"notes":""},{"id":"EX-046","source":"Ilegal Eksisting","no":46,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.12402,"lng":122.502294,"notes":""},{"id":"EX-047","source":"Ilegal Eksisting","no":47,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.120883,"lng":122.49612,"notes":""},{"id":"EX-048","source":"Ilegal Eksisting","no":48,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.119723,"lng":122.503239,"notes":""},{"id":"EX-049","source":"Ilegal Eksisting","no":49,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.121396,"lng":122.503865,"notes":""},{"id":"EX-050","source":"Ilegal Eksisting","no":50,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.114605,"lng":122.506024,"notes":""},{"id":"EX-051","source":"Ilegal Eksisting","no":51,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.114891,"lng":122.506623,"notes":""},{"id":"EX-052","source":"Ilegal Eksisting","no":52,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.11242,"lng":122.509352,"notes":""},{"id":"EX-053","source":"Ilegal Eksisting","no":53,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.111892,"lng":122.510211,"notes":""},{"id":"EX-054","source":"Ilegal Eksisting","no":54,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.11144,"lng":122.510751,"notes":""},{"id":"EX-055","source":"Ilegal Eksisting","no":55,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.109393,"lng":122.515366,"notes":""},{"id":"EX-056","source":"Ilegal Eksisting","no":56,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.109921,"lng":122.51478,"notes":""},{"id":"EX-057","source":"Ilegal Eksisting","no":57,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.111296,"lng":122.513401,"notes":""},{"id":"EX-058","source":"Ilegal Eksisting","no":58,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.112583,"lng":122.512001,"notes":""},{"id":"EX-059","source":"Ilegal Eksisting","no":59,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.11258,"lng":122.511995,"notes":""},{"id":"EX-060","source":"Ilegal Eksisting","no":60,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.114956,"lng":122.509493,"notes":""},{"id":"EX-061","source":"Ilegal Eksisting","no":61,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.11614,"lng":122.508023,"notes":""},{"id":"EX-062","source":"Ilegal Eksisting","no":62,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.115376,"lng":122.507256,"notes":""},{"id":"EX-063","source":"Ilegal Eksisting","no":63,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.115606,"lng":122.508736,"notes":""},{"id":"EX-064","source":"Ilegal Eksisting","no":64,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.115379,"lng":122.511765,"notes":""},{"id":"EX-065","source":"Ilegal Eksisting","no":65,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.11346,"lng":122.513634,"notes":""},{"id":"EX-066","source":"Ilegal Eksisting","no":66,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.113133,"lng":122.514166,"notes":""},{"id":"EX-067","source":"Ilegal Eksisting","no":67,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.11295,"lng":122.51447,"notes":""},{"id":"EX-068","source":"Ilegal Eksisting","no":68,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.108736,"lng":122.516142,"notes":""},{"id":"EX-069","source":"Ilegal Eksisting","no":69,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.107939,"lng":122.516588,"notes":""},{"id":"EX-070","source":"Ilegal Eksisting","no":70,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.106037,"lng":122.516251,"notes":""},{"id":"EX-071","source":"Ilegal Eksisting","no":71,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.103978,"lng":122.515889,"notes":""},{"id":"EX-072","source":"Ilegal Eksisting","no":72,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.097169,"lng":122.523038,"notes":""},{"id":"EX-073","source":"Ilegal Eksisting","no":73,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.097182,"lng":122.523047,"notes":""},{"id":"EX-074","source":"Ilegal Eksisting","no":74,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.107513,"lng":122.518037,"notes":""},{"id":"EX-075","source":"Ilegal Eksisting","no":75,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"LAWOILA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.107328,"lng":122.513357,"notes":""},{"id":"EX-076","source":"Ilegal Eksisting","no":76,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.12445,"lng":122.499263,"notes":""},{"id":"EX-077","source":"Ilegal Eksisting","no":77,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.124045,"lng":122.499992,"notes":""},{"id":"EX-078","source":"Ilegal Eksisting","no":78,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.123716,"lng":122.50074,"notes":""},{"id":"EX-079","source":"Ilegal Eksisting","no":79,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.122963,"lng":122.501658,"notes":""},{"id":"EX-080","source":"Ilegal Eksisting","no":80,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.123247,"lng":122.501158,"notes":""},{"id":"EX-081","source":"Ilegal Eksisting","no":81,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.122241,"lng":122.50344,"notes":""},{"id":"EX-082","source":"Ilegal Eksisting","no":82,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.121716,"lng":122.503944,"notes":""},{"id":"EX-083","source":"Ilegal Eksisting","no":83,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.120898,"lng":122.505496,"notes":""},{"id":"EX-084","source":"Ilegal Eksisting","no":84,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.119641,"lng":122.505286,"notes":""},{"id":"EX-085","source":"Ilegal Eksisting","no":85,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.11818,"lng":122.504552,"notes":""},{"id":"EX-086","source":"Ilegal Eksisting","no":86,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.116536,"lng":122.503946,"notes":""},{"id":"EX-087","source":"Ilegal Eksisting","no":87,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.11702,"lng":122.503151,"notes":""},{"id":"EX-088","source":"Ilegal Eksisting","no":88,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.11742,"lng":122.502695,"notes":""},{"id":"EX-089","source":"Ilegal Eksisting","no":89,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.117023,"lng":122.500546,"notes":""},{"id":"EX-090","source":"Ilegal Eksisting","no":90,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.117833,"lng":122.500936,"notes":""},{"id":"EX-091","source":"Ilegal Eksisting","no":91,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.118686,"lng":122.501337,"notes":""},{"id":"EX-092","source":"Ilegal Eksisting","no":92,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.119354,"lng":122.501671,"notes":""},{"id":"EX-093","source":"Ilegal Eksisting","no":93,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.120171,"lng":122.50224,"notes":""},{"id":"EX-094","source":"Ilegal Eksisting","no":94,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.121176,"lng":122.50289,"notes":""},{"id":"EX-095","source":"Ilegal Eksisting","no":95,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.12315,"lng":122.503262,"notes":""},{"id":"EX-096","source":"Ilegal Eksisting","no":96,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.122325,"lng":122.501318,"notes":""},{"id":"EX-097","source":"Ilegal Eksisting","no":97,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.12231,"lng":122.501325,"notes":""},{"id":"EX-098","source":"Ilegal Eksisting","no":98,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.120713,"lng":122.500466,"notes":""},{"id":"EX-099","source":"Ilegal Eksisting","no":99,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.121361,"lng":122.49908,"notes":""},{"id":"EX-100","source":"Ilegal Eksisting","no":100,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.123169,"lng":122.49984,"notes":""},{"id":"EX-101","source":"Ilegal Eksisting","no":101,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.12246,"lng":122.499445,"notes":""},{"id":"EX-102","source":"Ilegal Eksisting","no":102,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.12402,"lng":122.502294,"notes":""},{"id":"EX-103","source":"Ilegal Eksisting","no":103,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.120883,"lng":122.49612,"notes":""},{"id":"EX-104","source":"Ilegal Eksisting","no":104,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.119723,"lng":122.503239,"notes":""},{"id":"EX-105","source":"Ilegal Eksisting","no":105,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"MASAGENA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.121396,"lng":122.503865,"notes":""},{"id":"EX-106","source":"Ilegal Eksisting","no":106,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.10876,"lng":122.50807,"notes":""},{"id":"EX-107","source":"Ilegal Eksisting","no":107,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.110372,"lng":122.50615,"notes":""},{"id":"EX-108","source":"Ilegal Eksisting","no":108,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.110459,"lng":122.50751,"notes":""},{"id":"EX-109","source":"Ilegal Eksisting","no":109,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.1097714,"lng":122.5068931,"notes":""},{"id":"EX-110","source":"Ilegal Eksisting","no":110,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.106928,"lng":122.507925,"notes":""},{"id":"EX-111","source":"Ilegal Eksisting","no":111,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.1070644,"lng":122.5080689,"notes":""},{"id":"EX-112","source":"Ilegal Eksisting","no":112,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.106867,"lng":122.507398,"notes":""},{"id":"EX-113","source":"Ilegal Eksisting","no":113,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.106585,"lng":122.507695,"notes":""},{"id":"EX-114","source":"Ilegal Eksisting","no":114,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.103038,"lng":122.511462,"notes":""},{"id":"EX-115","source":"Ilegal Eksisting","no":115,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.10403,"lng":122.510357,"notes":""},{"id":"EX-116","source":"Ilegal Eksisting","no":116,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.103524,"lng":122.510949,"notes":""},{"id":"EX-117","source":"Ilegal Eksisting","no":117,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.106294,"lng":122.507978,"notes":""},{"id":"EX-118","source":"Ilegal Eksisting","no":118,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.10579,"lng":122.508484,"notes":""},{"id":"EX-119","source":"Ilegal Eksisting","no":119,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.10523,"lng":122.5091,"notes":""},{"id":"EX-120","source":"Ilegal Eksisting","no":120,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.107058,"lng":122.508757,"notes":""},{"id":"EX-121","source":"Ilegal Eksisting","no":121,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.10763,"lng":122.509367,"notes":""},{"id":"EX-122","source":"Ilegal Eksisting","no":122,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.105069,"lng":122.509263,"notes":""},{"id":"EX-123","source":"Ilegal Eksisting","no":123,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.109173,"lng":122.510421,"notes":""},{"id":"EX-124","source":"Ilegal Eksisting","no":124,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.108429,"lng":122.50992,"notes":""},{"id":"EX-125","source":"Ilegal Eksisting","no":125,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.107601,"lng":122.512754,"notes":""},{"id":"EX-126","source":"Ilegal Eksisting","no":126,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.106137,"lng":122.514042,"notes":""},{"id":"EX-127","source":"Ilegal Eksisting","no":127,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.108143,"lng":122.512055,"notes":""},{"id":"EX-128","source":"Ilegal Eksisting","no":128,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.108628,"lng":122.511236,"notes":""},{"id":"EX-129","source":"Ilegal Eksisting","no":129,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.105016,"lng":122.514952,"notes":""},{"id":"EX-130","source":"Ilegal Eksisting","no":130,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.109687,"lng":122.509888,"notes":""},{"id":"EX-131","source":"Ilegal Eksisting","no":131,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.110621,"lng":122.508881,"notes":""},{"id":"EX-132","source":"Ilegal Eksisting","no":132,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.109253,"lng":122.510396,"notes":""},{"id":"EX-133","source":"Ilegal Eksisting","no":133,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.113142,"lng":122.506037,"notes":""},{"id":"EX-134","source":"Ilegal Eksisting","no":134,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.111608,"lng":122.507481,"notes":""},{"id":"EX-135","source":"Ilegal Eksisting","no":135,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.11374,"lng":122.505405,"notes":""},{"id":"EX-136","source":"Ilegal Eksisting","no":136,"ulp":"WUA-WUA","kecamatan":"KONDA","kelurahan":"WONUA","lampType":"LED","lampCount":1.0,"watt":150.0,"ballast":0.0,"totalWatt":150.0,"status":"ILEGAL","kwhTs":56.25,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":-4.111282,"lng":122.508017,"notes":""},{"id":"EX-137","source":"Ilegal Eksisting","no":137,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"OMBU OMBU JAYA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.302135,"lng":122.43981166666667,"notes":""},{"id":"EX-138","source":"Ilegal Eksisting","no":138,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"OMBU OMBU JAYA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.302186666666667,"lng":122.43790666666668,"notes":""},{"id":"EX-139","source":"Ilegal Eksisting","no":139,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"OMBU OMBU JAYA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.303053333333333,"lng":122.44118666666667,"notes":""},{"id":"EX-140","source":"Ilegal Eksisting","no":140,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"OMBU OMBU JAYA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.30345,"lng":122.44114833333333,"notes":""},{"id":"EX-141","source":"Ilegal Eksisting","no":141,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"OMBU OMBU JAYA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.300048333333333,"lng":122.440105,"notes":""},{"id":"EX-142","source":"Ilegal Eksisting","no":142,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"OMBU OMBU JAYA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.298386666666667,"lng":122.437645,"notes":""},{"id":"EX-143","source":"Ilegal Eksisting","no":143,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"OMBU OMBU JAYA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.301923333333333,"lng":122.44117,"notes":""},{"id":"EX-144","source":"Ilegal Eksisting","no":144,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"OMBU OMBU JAYA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.297435,"lng":122.43752333333333,"notes":""},{"id":"EX-145","source":"Ilegal Eksisting","no":145,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"OMBU OMBU JAYA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.29823,"lng":122.43997833333334,"notes":""},{"id":"EX-146","source":"Ilegal Eksisting","no":146,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"OMBU OMBU JAYA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.296315,"lng":122.44446333333333,"notes":""},{"id":"EX-147","source":"Ilegal Eksisting","no":147,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"OMBU OMBU JAYA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.29634,"lng":122.44180333333334,"notes":""},{"id":"EX-148","source":"Ilegal Eksisting","no":148,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"OMBU OMBU JAYA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.298126666666667,"lng":122.44173666666667,"notes":""},{"id":"EX-149","source":"Ilegal Eksisting","no":149,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"OMBU OMBU JAYA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.2999616666666665,"lng":122.44183833333334,"notes":""},{"id":"EX-150","source":"Ilegal Eksisting","no":150,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"OMBU OMBU JAYA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.299718333333333,"lng":122.44476333333334,"notes":""},{"id":"EX-151","source":"Ilegal Eksisting","no":151,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"OMBU OMBU JAYA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.298021666666666,"lng":122.44463833333333,"notes":""},{"id":"EX-152","source":"Ilegal Eksisting","no":152,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"OMBU OMBU JAYA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.299718333333333,"lng":122.44570833333334,"notes":""},{"id":"EX-153","source":"Ilegal Eksisting","no":153,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"OMBU OMBU JAYA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.301301666666666,"lng":122.43786,"notes":""},{"id":"EX-154","source":"Ilegal Eksisting","no":154,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"OMBU OMBU JAYA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.300231666666667,"lng":122.43778166666667,"notes":""},{"id":"EX-155","source":"Ilegal Eksisting","no":155,"ulp":"KONAWE SELATAN","kecamatan":"LAEYA","kelurahan":"OMBU OMBU JAYA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.300036666666666,"lng":122.44101500000001,"notes":""},{"id":"EX-156","source":"Ilegal Eksisting","no":156,"ulp":"KONAWE SELATAN","kecamatan":"BAITO","kelurahan":"BAITO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":0,"lng":122.300423,"notes":""},{"id":"EX-157","source":"Ilegal Eksisting","no":157,"ulp":"KONAWE SELATAN","kecamatan":"BAITO","kelurahan":"BAITO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.254521,"lng":122.292864,"notes":""},{"id":"EX-158","source":"Ilegal Eksisting","no":158,"ulp":"KONAWE SELATAN","kecamatan":"BAITO","kelurahan":"BAITO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL + NYALA SIANG","kwhTs":72.0,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.262407,"lng":122.30085,"notes":""},{"id":"EX-159","source":"Ilegal Eksisting","no":159,"ulp":"KONAWE SELATAN","kecamatan":"BAITO","kelurahan":"BAITO","lampType":"MERCURY","lampCount":1.0,"watt":250.0,"ballast":250.0,"totalWatt":500.0,"status":"ILEGAL","kwhTs":187.5,"idpelTs":"323700429835","namaPlg":"PJU ANDOOLO","lat":-4.277901,"lng":122.317508,"notes":""},{"id":"EX-160","source":"Ilegal Eksisting","no":160,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"LALOBAO","lampType":"MERCURY","lampCount":1.0,"watt":250.0,"ballast":250.0,"totalWatt":500.0,"status":"ILEGAL","kwhTs":187.5,"idpelTs":"323700429836","namaPlg":"PJU ANDOOLO","lat":-4.362211,"lng":122.246102,"notes":""},{"id":"EX-161","source":"Ilegal Eksisting","no":161,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO BARAT","kelurahan":"MATAIWOI","lampType":"MERCURY","lampCount":1.0,"watt":250.0,"ballast":250.0,"totalWatt":500.0,"status":"ILEGAL","kwhTs":187.5,"idpelTs":"323700429837","namaPlg":"PJU ANDOOLO","lat":-4.347361,"lng":122.81036,"notes":""},{"id":"EX-162","source":"Ilegal Eksisting","no":162,"ulp":"KONAWE SELATAN","kecamatan":"LAMONG JAYA","kelurahan":"LAEYA","lampType":"LED","lampCount":1.0,"watt":90.0,"ballast":0.0,"totalWatt":90.0,"status":"ILEGAL","kwhTs":33.75,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.297778,"lng":122.456389,"notes":""},{"id":"EX-163","source":"Ilegal Eksisting","no":163,"ulp":"KONAWE SELATAN","kecamatan":"LAMONG JAYA","kelurahan":"LAEYA","lampType":"LED","lampCount":1.0,"watt":90.0,"ballast":0.0,"totalWatt":90.0,"status":"ILEGAL","kwhTs":33.75,"idpelTs":"323700335144","namaPlg":"PJU LAEYA","lat":-4.296667,"lng":122.46,"notes":""},{"id":"EX-164","source":"Ilegal Eksisting","no":164,"ulp":"KONAWE SELATAN","kecamatan":"LAMONG JAYA","kelurahan":"LAEYA","lampType":"LED","lampCount":1.0,"watt":90.0,"ballast":0.0,"totalWatt":90.0,"status":"ILEGAL","kwhTs":33.75,"idpelTs":"323700335145","namaPlg":"PJU LAEYA","lat":-4.296667,"lng":122.46,"notes":""},{"id":"EX-165","source":"Ilegal Eksisting","no":165,"ulp":"KONAWE SELATAN","kecamatan":"LAMONG JAYA","kelurahan":"LAEYA","lampType":"LED","lampCount":1.0,"watt":90.0,"ballast":0.0,"totalWatt":90.0,"status":"ILEGAL","kwhTs":33.75,"idpelTs":"323700335146","namaPlg":"PJU LAEYA","lat":-4.299444,"lng":122.463611,"notes":""},{"id":"EX-166","source":"Ilegal Eksisting","no":166,"ulp":"KONAWE SELATAN","kecamatan":"LAMONG JAYA","kelurahan":"LAEYA","lampType":"LED","lampCount":1.0,"watt":90.0,"ballast":0.0,"totalWatt":90.0,"status":"ILEGAL","kwhTs":33.75,"idpelTs":"323700335147","namaPlg":"PJU LAEYA","lat":-4.299722,"lng":122.456389,"notes":""},{"id":"EX-167","source":"Ilegal Eksisting","no":167,"ulp":"KONAWE SELATAN","kecamatan":"LAMONG JAYA","kelurahan":"LAEYA","lampType":"LED","lampCount":1.0,"watt":90.0,"ballast":0.0,"totalWatt":90.0,"status":"ILEGAL","kwhTs":33.75,"idpelTs":"323700335148","namaPlg":"PJU LAEYA","lat":-4.299722,"lng":122.45,"notes":""},{"id":"EX-168","source":"Ilegal Eksisting","no":168,"ulp":"KONAWE SELATAN","kecamatan":"LAMONG JAYA","kelurahan":"LAEYA","lampType":"LED","lampCount":1.0,"watt":90.0,"ballast":0.0,"totalWatt":90.0,"status":"ILEGAL","kwhTs":33.75,"idpelTs":"323700335149","namaPlg":"PJU LAEYA","lat":-4.299722,"lng":122.453056,"notes":""},{"id":"EX-169","source":"Ilegal Eksisting","no":169,"ulp":"KONAWE SELATAN","kecamatan":"LAMONG JAYA","kelurahan":"LAEYA","lampType":"LED","lampCount":1.0,"watt":90.0,"ballast":0.0,"totalWatt":90.0,"status":"ILEGAL","kwhTs":33.75,"idpelTs":"323700335150","namaPlg":"PJU LAEYA","lat":-4.299444,"lng":122.465,"notes":""},{"id":"EX-170","source":"Ilegal Eksisting","no":170,"ulp":"KONAWE SELATAN","kecamatan":"LAMONG JAYA","kelurahan":"LAEYA","lampType":"LED","lampCount":1.0,"watt":90.0,"ballast":0.0,"totalWatt":90.0,"status":"ILEGAL","kwhTs":33.75,"idpelTs":"323700335151","namaPlg":"PJU LAEYA","lat":-4.295,"lng":122.453333,"notes":""},{"id":"EX-171","source":"Ilegal Eksisting","no":171,"ulp":"KONAWE SELATAN","kecamatan":"LAMONG JAYA","kelurahan":"LAEYA","lampType":"LED","lampCount":1.0,"watt":90.0,"ballast":0.0,"totalWatt":90.0,"status":"ILEGAL","kwhTs":33.75,"idpelTs":"323700335152","namaPlg":"PJU LAEYA","lat":-4.295,"lng":122.45,"notes":""},{"id":"EX-172","source":"Ilegal Eksisting","no":172,"ulp":"KONAWE SELATAN","kecamatan":"LAMONG JAYA","kelurahan":"LAEYA","lampType":"LED","lampCount":1.0,"watt":90.0,"ballast":0.0,"totalWatt":90.0,"status":"ILEGAL","kwhTs":33.75,"idpelTs":"323700335153","namaPlg":"PJU LAEYA","lat":-4299722.0,"lng":122.447222,"notes":""},{"id":"BT-001","source":"Baru Terpasang","no":1,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"ALANGGA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3147222,"lng":122.2575,"notes":""},{"id":"BT-002","source":"Baru Terpasang","no":2,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"ALANGGA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3191666,"lng":122.256666,"notes":""},{"id":"BT-003","source":"Baru Terpasang","no":3,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"ALANGGA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3216666,"lng":122.256388,"notes":""},{"id":"BT-004","source":"Baru Terpasang","no":4,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"ANDOOLO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3263888,"lng":122.251388,"notes":""},{"id":"BT-005","source":"Baru Terpasang","no":5,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"ANDOOLO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3241666,"lng":122.252777,"notes":""},{"id":"BT-006","source":"Baru Terpasang","no":6,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"ANDOOLO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3113888,"lng":122.249166,"notes":""},{"id":"BT-007","source":"Baru Terpasang","no":7,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"ANDOOLO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3125,"lng":122.249444,"notes":""},{"id":"BT-008","source":"Baru Terpasang","no":8,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"ANDOOLO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3136111,"lng":122.249444,"notes":""},{"id":"BT-009","source":"Baru Terpasang","no":9,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"ANDOOLO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3152777,"lng":122.25,"notes":""},{"id":"BT-010","source":"Baru Terpasang","no":10,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"ANDOOLO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3183333,"lng":122.250555,"notes":""},{"id":"BT-011","source":"Baru Terpasang","no":11,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"ANDOOLO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3194444,"lng":122.250555,"notes":""},{"id":"BT-012","source":"Baru Terpasang","no":12,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"ANDOOLO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3205555,"lng":122.250555,"notes":""},{"id":"BT-013","source":"Baru Terpasang","no":13,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"ANDOOLO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3213888,"lng":122.250555,"notes":""},{"id":"BT-014","source":"Baru Terpasang","no":14,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"LALOBAO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3625,"lng":122.246388,"notes":""},{"id":"BT-015","source":"Baru Terpasang","no":15,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"LALOBAO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3627777,"lng":122.246388,"notes":""},{"id":"BT-016","source":"Baru Terpasang","no":16,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"PUNGGAPU","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3294444,"lng":122.251666,"notes":""},{"id":"BT-017","source":"Baru Terpasang","no":17,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"PUNGGAPU","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3319444,"lng":122.252222,"notes":""},{"id":"BT-018","source":"Baru Terpasang","no":18,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"XXX","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3244444,"lng":122.256944,"notes":""},{"id":"BT-019","source":"Baru Terpasang","no":19,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"XXX","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3244444,"lng":122.256944,"notes":""},{"id":"BT-020","source":"Baru Terpasang","no":20,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO","kelurahan":"XXX","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3244444,"lng":122.256944,"notes":""},{"id":"BT-021","source":"Baru Terpasang","no":21,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO BARAT","kelurahan":"MATAIWOI","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.3458333,"lng":122.178055,"notes":""},{"id":"BT-022","source":"Baru Terpasang","no":22,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO BARAT","kelurahan":"MATAIWOI","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.35,"lng":122.179444,"notes":""},{"id":"BT-023","source":"Baru Terpasang","no":23,"ulp":"KONAWE SELATAN","kecamatan":"ANDOOLO BARAT","kelurahan":"PUUNDOHO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700429834","namaPlg":"PJU ANDOOLO","lat":-4.354296,"lng":122.153141,"notes":""},{"id":"BT-024","source":"Baru Terpasang","no":24,"ulp":"KONAWE SELATAN","kecamatan":"ANGATA","kelurahan":"","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323750044948","namaPlg":"PJU ANGATA","lat":0,"lng":0,"notes":""},{"id":"BT-025","source":"Baru Terpasang","no":25,"ulp":"KONAWE SELATAN","kecamatan":"ANGATA","kelurahan":"","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323750044948","namaPlg":"PJU ANGATA","lat":0,"lng":0,"notes":""},{"id":"BT-026","source":"Baru Terpasang","no":26,"ulp":"KONAWE SELATAN","kecamatan":"ANGATA","kelurahan":"","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323750044948","namaPlg":"PJU ANGATA","lat":0,"lng":0,"notes":""},{"id":"BT-027","source":"Baru Terpasang","no":27,"ulp":"KONAWE SELATAN","kecamatan":"ANGATA","kelurahan":"","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323750044948","namaPlg":"PJU ANGATA","lat":0,"lng":0,"notes":""},{"id":"BT-028","source":"Baru Terpasang","no":28,"ulp":"KONAWE SELATAN","kecamatan":"ANGATA","kelurahan":"","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323750044948","namaPlg":"PJU ANGATA","lat":0,"lng":0,"notes":""},{"id":"BT-029","source":"Baru Terpasang","no":29,"ulp":"KONAWE SELATAN","kecamatan":"ANGATA","kelurahan":"","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323750044948","namaPlg":"PJU ANGATA","lat":0,"lng":0,"notes":""},{"id":"BT-030","source":"Baru Terpasang","no":30,"ulp":"KONAWE SELATAN","kecamatan":"BUKE","kelurahan":"ANDOOLO UTAMA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335135","namaPlg":"PJU BUKE","lat":-4.288967,"lng":122.204536,"notes":""},{"id":"BT-031","source":"Baru Terpasang","no":31,"ulp":"KONAWE SELATAN","kecamatan":"BUKE","kelurahan":"RANOOHA LESTARI","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335135","namaPlg":"PJU BUKE","lat":-4.270436,"lng":122.210905,"notes":""},{"id":"BT-032","source":"Baru Terpasang","no":32,"ulp":"KONAWE SELATAN","kecamatan":"BUKE","kelurahan":"RANOOHA LESTARI","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335135","namaPlg":"PJU BUKE","lat":-4.276101,"lng":122.202618,"notes":""},{"id":"BT-033","source":"Baru Terpasang","no":33,"ulp":"KONAWE SELATAN","kecamatan":"MOWILA","kelurahan":"PUDAHOA","lampType":"LED","lampCount":0,"watt":100.0,"ballast":0.0,"totalWatt":0.0,"status":"ILEGAL","kwhTs":0.0,"idpelTs":"323750029372","namaPlg":"PJU MOWILA","lat":-4.16,"lng":122.252222,"notes":""},{"id":"BT-034","source":"Baru Terpasang","no":34,"ulp":"KONAWE SELATAN","kecamatan":"MOWILA","kelurahan":"PUDAHOA","lampType":"LED","lampCount":0,"watt":100.0,"ballast":0.0,"totalWatt":0.0,"status":"ILEGAL","kwhTs":0.0,"idpelTs":"323750029372","namaPlg":"PJU MOWILA","lat":-4.1594444,"lng":122.252222,"notes":""},{"id":"BT-035","source":"Baru Terpasang","no":35,"ulp":"KONAWE SELATAN","kecamatan":"MOWILA","kelurahan":"PUDAHOA","lampType":"LED","lampCount":0,"watt":100.0,"ballast":0.0,"totalWatt":0.0,"status":"ILEGAL","kwhTs":0.0,"idpelTs":"323750029372","namaPlg":"PJU MOWILA","lat":-4.1594444,"lng":122.251666,"notes":""},{"id":"BT-036","source":"Baru Terpasang","no":36,"ulp":"KONAWE SELATAN","kecamatan":"MOWILA","kelurahan":"PUDAHOA","lampType":"LED","lampCount":0,"watt":100.0,"ballast":0.0,"totalWatt":0.0,"status":"ILEGAL","kwhTs":0.0,"idpelTs":"323750029372","namaPlg":"PJU MOWILA","lat":-4.1583333,"lng":122.251111,"notes":""},{"id":"BT-037","source":"Baru Terpasang","no":37,"ulp":"KONAWE SELATAN","kecamatan":"MOWILA","kelurahan":"PUDAHOA","lampType":"LED","lampCount":0,"watt":100.0,"ballast":0.0,"totalWatt":0.0,"status":"ILEGAL","kwhTs":0.0,"idpelTs":"323750029372","namaPlg":"PJU MOWILA","lat":-4.1580555,"lng":122.251111,"notes":""},{"id":"BT-038","source":"Baru Terpasang","no":38,"ulp":"KONAWE SELATAN","kecamatan":"MOWILA","kelurahan":"PUDAHOA","lampType":"LED","lampCount":0,"watt":100.0,"ballast":0.0,"totalWatt":0.0,"status":"ILEGAL","kwhTs":0.0,"idpelTs":"323750029372","namaPlg":"PJU MOWILA","lat":-4.1575,"lng":122.250833,"notes":""},{"id":"BT-039","source":"Baru Terpasang","no":39,"ulp":"KONAWE SELATAN","kecamatan":"MOWILA","kelurahan":"PUDAHOA","lampType":"LED","lampCount":0,"watt":100.0,"ballast":0.0,"totalWatt":0.0,"status":"ILEGAL","kwhTs":0.0,"idpelTs":"323750029372","namaPlg":"PJU MOWILA","lat":-4.1572222,"lng":122.250277,"notes":""},{"id":"BT-040","source":"Baru Terpasang","no":40,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"ANGGONDARA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.3202777,"lng":122.395555,"notes":""},{"id":"BT-041","source":"Baru Terpasang","no":41,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"ANGGONDARA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.3225,"lng":122.395833,"notes":""},{"id":"BT-042","source":"Baru Terpasang","no":42,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"ANGGONDARA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.3108333,"lng":122.414166,"notes":""},{"id":"BT-043","source":"Baru Terpasang","no":43,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"ANGGONDARA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.3113888,"lng":122.413055,"notes":""},{"id":"BT-044","source":"Baru Terpasang","no":44,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"ANGGONDARA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.3122222,"lng":122.411111,"notes":""},{"id":"BT-045","source":"Baru Terpasang","no":45,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"ANGGONDARA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.3172222,"lng":122.399722,"notes":""},{"id":"BT-046","source":"Baru Terpasang","no":46,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"ANGGONDARA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.3194444,"lng":122.396666,"notes":""},{"id":"BT-047","source":"Baru Terpasang","no":47,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"EEWA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.3263888,"lng":122.377777,"notes":""},{"id":"BT-048","source":"Baru Terpasang","no":48,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"EEWA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.3266666,"lng":122.376388,"notes":""},{"id":"BT-049","source":"Baru Terpasang","no":49,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"EEWA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.3288888,"lng":122.371388,"notes":""},{"id":"BT-050","source":"Baru Terpasang","no":50,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"EEWA","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.3280555,"lng":122.373333,"notes":""},{"id":"BT-051","source":"Baru Terpasang","no":51,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"ONEMBUTE","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.3325,"lng":122.393611,"notes":""},{"id":"BT-052","source":"Baru Terpasang","no":52,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"ONEMBUTE","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.3258333,"lng":122.3875,"notes":""},{"id":"BT-053","source":"Baru Terpasang","no":53,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"ONEMBUTE","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.3258333,"lng":122.383888,"notes":""},{"id":"BT-054","source":"Baru Terpasang","no":54,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"ONEMBUTE","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.3241666,"lng":122.379722,"notes":""},{"id":"BT-055","source":"Baru Terpasang","no":55,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"WATUMEREMBE","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.3441666,"lng":122.350277,"notes":""},{"id":"BT-056","source":"Baru Terpasang","no":56,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"WATUMEREMBE","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.3355555,"lng":122.357499,"notes":""},{"id":"BT-057","source":"Baru Terpasang","no":57,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"WATUMEREMBE","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.3469444,"lng":122.349166,"notes":""},{"id":"BT-058","source":"Baru Terpasang","no":58,"ulp":"KONAWE SELATAN","kecamatan":"PALANGGA","kelurahan":"WATUMEREMBE","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323700335143","namaPlg":"PJU LAEYA","lat":-4.3472222,"lng":122.349166,"notes":""},{"id":"BT-059","source":"Baru Terpasang","no":59,"ulp":"KONAWE SELATAN","kecamatan":"TINANGGEA","kelurahan":"","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323720044932","namaPlg":"PJU TINANGGEA","lat":0,"lng":0,"notes":""},{"id":"BT-060","source":"Baru Terpasang","no":60,"ulp":"KONAWE SELATAN","kecamatan":"TINANGGEA","kelurahan":"","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323720044932","namaPlg":"PJU TINANGGEA","lat":0,"lng":0,"notes":""},{"id":"BT-061","source":"Baru Terpasang","no":61,"ulp":"KONAWE SELATAN","kecamatan":"TINANGGEA","kelurahan":"","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323720044932","namaPlg":"PJU TINANGGEA","lat":0,"lng":0,"notes":""},{"id":"BT-062","source":"Baru Terpasang","no":62,"ulp":"KONAWE SELATAN","kecamatan":"TINANGGEA","kelurahan":"","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323720044932","namaPlg":"PJU TINANGGEA","lat":0,"lng":0,"notes":""},{"id":"BT-063","source":"Baru Terpasang","no":63,"ulp":"KONAWE SELATAN","kecamatan":"TINANGGEA","kelurahan":"","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323720044932","namaPlg":"PJU TINANGGEA","lat":0,"lng":0,"notes":""},{"id":"BT-064","source":"Baru Terpasang","no":64,"ulp":"KONAWE SELATAN","kecamatan":"TINANGGEA","kelurahan":"","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323720044932","namaPlg":"PJU TINANGGEA","lat":0,"lng":0,"notes":""},{"id":"BT-065","source":"Baru Terpasang","no":65,"ulp":"KONAWE SELATAN","kecamatan":"TINANGGEA","kelurahan":"","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323720044932","namaPlg":"PJU TINANGGEA","lat":0,"lng":0,"notes":""},{"id":"BT-066","source":"Baru Terpasang","no":66,"ulp":"KONAWE SELATAN","kecamatan":"TINANGGEA","kelurahan":"","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323720044932","namaPlg":"PJU TINANGGEA","lat":0,"lng":0,"notes":""},{"id":"BT-067","source":"Baru Terpasang","no":67,"ulp":"KONAWE SELATAN","kecamatan":"TINANGGEA","kelurahan":"","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323720044932","namaPlg":"PJU TINANGGEA","lat":0,"lng":0,"notes":""},{"id":"BT-068","source":"Baru Terpasang","no":68,"ulp":"KONAWE SELATAN","kecamatan":"TINANGGEA","kelurahan":"","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323720044932","namaPlg":"PJU TINANGGEA","lat":0,"lng":0,"notes":""},{"id":"BT-069","source":"Baru Terpasang","no":69,"ulp":"KONAWE SELATAN","kecamatan":"TINANGGEA","kelurahan":"","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323720044932","namaPlg":"PJU TINANGGEA","lat":0,"lng":0,"notes":""},{"id":"BT-070","source":"Baru Terpasang","no":70,"ulp":"KONAWE SELATAN","kecamatan":"TINANGGEA","kelurahan":"","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323720044932","namaPlg":"PJU TINANGGEA","lat":0,"lng":0,"notes":""},{"id":"BT-071","source":"Baru Terpasang","no":71,"ulp":"WUA-WUA","kecamatan":"RANOMEETO","kelurahan":"PASAR RANOMEETO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":0,"lng":0,"notes":""},{"id":"BT-072","source":"Baru Terpasang","no":72,"ulp":"WUA-WUA","kecamatan":"RANOMEETO","kelurahan":"PASAR RANOMEETO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":0,"lng":0,"notes":""},{"id":"BT-073","source":"Baru Terpasang","no":73,"ulp":"WUA-WUA","kecamatan":"RANOMEETO","kelurahan":"PASAR RANOMEETO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":0,"lng":0,"notes":""},{"id":"BT-074","source":"Baru Terpasang","no":74,"ulp":"WUA-WUA","kecamatan":"RANOMEETO","kelurahan":"PASAR RANOMEETO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":0,"lng":0,"notes":""},{"id":"BT-075","source":"Baru Terpasang","no":75,"ulp":"WUA-WUA","kecamatan":"RANOMEETO","kelurahan":"PASAR RANOMEETO","lampType":"LED","lampCount":1.0,"watt":100.0,"ballast":0.0,"totalWatt":100.0,"status":"ILEGAL","kwhTs":37.5,"idpelTs":"323220025230","namaPlg":"PJU WMI KONSEL","lat":0,"lng":0,"notes":""}];
+    const simulasiRows = [{"lokasi":"WILKER ULP KONAWE SELATAN","lampType":"MERCURY","daya":250.0,"vaTitik":500.0,"titik":16.0,"jumlahVa":8000.0,"ket":"ILEGAL EKSISTING","potensiKwh":3000.0,"hargaKwh":1699.53,"rpTs":5098590.0},{"lokasi":"","lampType":"LED","daya":100.0,"vaTitik":100.0,"titik":1.0,"jumlahVa":100.0,"ket":"ILEGAL EKSISTING","potensiKwh":37.5,"hargaKwh":1699.53,"rpTs":63732.375},{"lokasi":"","lampType":"LED","daya":100.0,"vaTitik":100.0,"titik":7.0,"jumlahVa":700.0,"ket":"NYALA SIANG","potensiKwh":241.5,"hargaKwh":1699.53,"rpTs":410436.495},{"lokasi":"","lampType":"LED","daya":100.0,"vaTitik":100.0,"titik":70.0,"jumlahVa":7000.0,"ket":"ILEGAL (BARU TERPASANG)","potensiKwh":2625.0,"hargaKwh":1699.53,"rpTs":4461266.25},{"lokasi":"WILKER ULP WUAWUA","lampType":"LED","daya":100.0,"vaTitik":100.0,"titik":81.0,"jumlahVa":8100.0,"ket":"ILEGAL EKSISTING","potensiKwh":3037.5,"hargaKwh":1699.53,"rpTs":5162322.375},{"lokasi":"","lampType":"LED","daya":100.0,"vaTitik":100.0,"titik":5.0,"jumlahVa":500.0,"ket":"ILEGAL (BARU TERPASANG)","potensiKwh":187.5,"hargaKwh":1699.53,"rpTs":318661.875},{"lokasi":"","lampType":"LED","daya":150.0,"vaTitik":150.0,"titik":31.0,"jumlahVa":4650.0,"ket":"ILEGAL EKSISTING","potensiKwh":1743.75,"hargaKwh":1699.53,"rpTs":2963555.4375}];
+    const currencyRate = 1699.53;
+    const els = {
+      rows: document.querySelector("#assetRows"),
+      empty: document.querySelector("#emptyState"),
+      markers: document.querySelector("#markers"),
+      search: document.querySelector("#search"),
+      sourceFilter: document.querySelector("#sourceFilter"),
+      statusFilter: document.querySelector("#statusFilter"),
+      areaFilter: document.querySelector("#areaFilter"),
+      sortBy: document.querySelector("#sortBy"),
+      areaBars: document.querySelector("#areaBars"),
+      detail: document.querySelector("#detailPanel"),
+      simRows: document.querySelector("#simRows"),
+      hargaKwh: document.querySelector("#hargaKwh"),
+      form: document.querySelector("#assetForm"),
+      recordId: document.querySelector("#recordId"),
+      formTitle: document.querySelector("#formTitle"),
+      deleteBtn: document.querySelector("#deleteBtn"),
+      toast: document.querySelector("#toast"),
+      csvInput: document.querySelector("#csvInput")
+    };
+    const fields = ["id","source","ulp","kecamatan","kelurahan","status","lampType","lampCount","watt","ballast","totalWatt","kwhTs","idpelTs","namaPlg","lat","lng","notes"];
+    let assets = loadAssets();
+    let selectedId = assets[0]?.id || "";
+    function cloneInitial() { return initialAssets.map(item => ({ ...item })); }
+    function loadAssets() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(storageKey) || "null");
+        return Array.isArray(stored) && stored.length ? stored : cloneInitial();
+      } catch {
+        return cloneInitial();
+      }
+    }
+    function persist() { localStorage.setItem(storageKey, JSON.stringify(assets)); }
+    function statusClass(value) {
+      if (value === "ILEGAL") return "bad";
+      if (value === "NYALA SIANG") return "warn";
+      if (value.includes("NYALA")) return "info";
+      return "ok";
+    }
+    function sourceClass(value) { return value === "Baru Terpasang" ? "info" : "bad"; }
+    function filteredAssets() {
+      const q = els.search.value.trim().toLowerCase();
+      const source = els.sourceFilter.value;
+      const status = els.statusFilter.value;
+      const area = els.areaFilter.value;
+      const list = assets.filter(asset => {
+        const haystack = [asset.id, asset.source, asset.ulp, asset.kecamatan, asset.kelurahan, asset.status, asset.lampType, asset.idpelTs, asset.namaPlg, asset.notes].join(" ").toLowerCase();
+        return (!q || haystack.includes(q)) && (!source || asset.source === source) && (!status || asset.status === status) && (!area || asset.kecamatan === area);
+      });
+      const sort = els.sortBy.value;
+      return list.sort((a, b) => {
+        if (sort === "totalWatt" || sort === "kwhTs") return Number(b[sort] || 0) - Number(a[sort] || 0);
+        return String(a[sort] || "").localeCompare(String(b[sort] || ""), "id");
+      });
+    }
+    function render() {
+      renderFilters();
+      const list = filteredAssets();
+      els.rows.innerHTML = list.map(asset => `
+        <tr class="${asset.id === selectedId ? "selected" : ""}" data-id="${escapeAttr(asset.id)}">
+          <td><strong>${escapeHtml(asset.id)}</strong></td>
+          <td>${escapeHtml(asset.kecamatan || "-")}<br><small>${escapeHtml(asset.kelurahan || asset.ulp || "-")}</small></td>
+          <td><span class="badge ${sourceClass(asset.source)}">${escapeHtml(asset.source)}</span></td>
+          <td><span class="badge ${statusClass(asset.status)}">${escapeHtml(asset.status)}</span></td>
+          <td>${escapeHtml(asset.lampType || "-")}</td>
+          <td>${fmt(asset.lampCount)}</td>
+          <td>${fmt(asset.totalWatt)} W</td>
+          <td>${fmt(asset.kwhTs)}</td>
+          <td>${escapeHtml(asset.idpelTs || "-")}</td>
+          <td><div class="mini-actions"><button class="btn icon-only" type="button" title="Edit" data-action="edit" data-id="${escapeAttr(asset.id)}"><span class="icon"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span></button><button class="btn icon-only" type="button" title="Duplikasi" data-action="copy" data-id="${escapeAttr(asset.id)}"><span class="icon"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span></button></div></td>
+        </tr>`).join("");
+      els.empty.hidden = list.length > 0;
+      document.querySelector("#countText").textContent = `Menampilkan ${list.length} dari ${assets.length} titik`;
+      renderStats(list);
+      renderMap(list);
+      renderAreaBars(list);
+      renderSimulation();
+      if (selectedId && assets.some(asset => asset.id === selectedId)) fillForm(assets.find(asset => asset.id === selectedId));
+      renderDetail(assets.find(asset => asset.id === selectedId) || list[0]);
+    }
+    function renderFilters() {
+      syncSelect(els.statusFilter, [...new Set(assets.map(asset => asset.status).filter(Boolean))].sort(), "Semua");
+      syncSelect(els.areaFilter, [...new Set(assets.map(asset => asset.kecamatan).filter(Boolean))].sort((a,b) => a.localeCompare(b, "id")), "Semua");
+    }
+    function syncSelect(select, options, allLabel) {
+      const current = select.value;
+      select.innerHTML = `<option value="">${allLabel}</option>` + options.map(value => `<option ${value === current ? "selected" : ""}>${escapeHtml(value)}</option>`).join("");
+    }
+    function renderStats(list) {
+      const scope = list.length || els.search.value || els.sourceFilter.value || els.statusFilter.value || els.areaFilter.value ? list : assets;
+      const lamps = sum(scope, "lampCount");
+      const watts = sum(scope, "totalWatt");
+      const kwh = sum(scope, "kwhTs");
+      document.querySelector("#totalStat").textContent = fmt(scope.length);
+      document.querySelector("#lampStat").textContent = fmt(lamps);
+      document.querySelector("#wattStat").textContent = `${fmt(watts)} W`;
+      document.querySelector("#kwhStat").textContent = fmt(kwh);
+    }
+    function renderMap(list) {
+      const coords = assets.filter(a => Number(a.lat) && Number(a.lng));
+      const minLat = Math.min(...coords.map(a => Number(a.lat)));
+      const maxLat = Math.max(...coords.map(a => Number(a.lat)));
+      const minLng = Math.min(...coords.map(a => Number(a.lng)));
+      const maxLng = Math.max(...coords.map(a => Number(a.lng)));
+      els.markers.innerHTML = list.slice(0, 160).map((asset, index) => {
+        const lng = Number(asset.lng);
+        const lat = Number(asset.lat);
+        const x = Number.isFinite(lng) && maxLng !== minLng ? 52 + ((lng - minLng) / (maxLng - minLng)) * 536 : 80 + (index * 73) % 480;
+        const y = Number.isFinite(lat) && maxLat !== minLat ? 48 + ((maxLat - lat) / (maxLat - minLat)) * 304 : 80 + (index * 47) % 240;
+        const color = asset.source === "Baru Terpasang" ? "#245a9c" : (asset.status === "NYALA SIANG" ? "#a86500" : "#b42318");
+        return `<g class="marker" data-id="${escapeAttr(asset.id)}" tabindex="0"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${asset.id === selectedId ? 13 : 8}" fill="${color}" stroke="#fff" stroke-width="3"/><path d="M${(x-4).toFixed(1)} ${y.toFixed(1)}h8M${x.toFixed(1)} ${(y-4).toFixed(1)}v8" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></g>`;
+      }).join("");
+    }
+    function renderAreaBars(list) {
+      const grouped = new Map();
+      for (const item of list) grouped.set(item.kecamatan || "Tanpa Kecamatan", (grouped.get(item.kecamatan || "Tanpa Kecamatan") || 0) + Number(item.lampCount || 0));
+      const rows = [...grouped.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+      const max = Math.max(1, ...rows.map(row => row[1]));
+      els.areaBars.innerHTML = rows.length ? rows.map(([name, value]) => `<div class="bar-row"><strong>${escapeHtml(name)}</strong><div class="bar"><i style="width:${Math.max(4, value / max * 100).toFixed(1)}%"></i></div><span>${fmt(value)} lampu</span></div>`).join("") : `<div class="empty">Belum ada data.</div>`;
+    }
+    function renderDetail(asset) {
+      if (!asset) {
+        els.detail.innerHTML = `<div class="empty">Pilih titik untuk melihat detail.</div>`;
+        return;
+      }
+      const rp = Number(asset.kwhTs || 0) * currencyRate;
+      document.querySelector("#detailTitle").textContent = `Detail ${asset.id}`;
+      els.detail.innerHTML = `<dl>
+        <dt>Nama PJU</dt><dd>${escapeHtml(asset.namaPlg || "-")}</dd>
+        <dt>Lokasi</dt><dd>${escapeHtml([asset.kelurahan, asset.kecamatan].filter(Boolean).join(", ") || "-")}</dd>
+        <dt>ULP</dt><dd>${escapeHtml(asset.ulp || "-")}</dd>
+        <dt>IDPEL TS</dt><dd>${escapeHtml(asset.idpelTs || "-")}</dd>
+        <dt>Daya Temuan</dt><dd>${fmt(asset.totalWatt)} W</dd>
+        <dt>Potensi kWh</dt><dd>${fmt(asset.kwhTs)} kWh</dd>
+        <dt>Estimasi RP TS</dt><dd>${rp.toLocaleString("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 })}</dd>
+        <dt>Koordinat</dt><dd>${asset.lat || "-"}, ${asset.lng || "-"}</dd>
+      </dl>`;
+    }
+    function renderSimulation() {
+      const harga = Number(els.hargaKwh.value || currencyRate);
+      const rows = simulasiRows.filter(row => String(row.lokasi || "").toUpperCase() !== "JUMLAH");
+      const totals = rows.reduce((acc, row) => {
+        acc.titik += Number(row.titik || 0);
+        acc.va += Number(row.jumlahVa || 0);
+        acc.kwh += Number(row.potensiKwh || 0);
+        return acc;
+      }, { titik: 0, va: 0, kwh: 0 });
+      const totalRp = totals.kwh * harga;
+      document.querySelector("#simTitik").textContent = fmt(totals.titik);
+      document.querySelector("#simKwh").textContent = fmt(totals.kwh);
+      document.querySelector("#simRp").textContent = rupiah(totalRp);
+      document.querySelector("#simFootTitik").textContent = fmt(totals.titik);
+      document.querySelector("#simFootVa").textContent = fmt(totals.va);
+      document.querySelector("#simFootKwh").textContent = fmt(totals.kwh);
+      document.querySelector("#simFootRp").textContent = rupiah(totalRp);
+      els.simRows.innerHTML = rows.map(row => {
+        const rp = Number(row.potensiKwh || 0) * harga;
+        return `<tr>
+          <td>${escapeHtml(row.lokasi || "-")}</td>
+          <td>${escapeHtml(row.lampType || "-")}</td>
+          <td>${fmt(row.daya)} W</td>
+          <td>${fmt(row.vaTitik)} VA</td>
+          <td>${fmt(row.titik)}</td>
+          <td>${fmt(row.jumlahVa)} VA</td>
+          <td><span class="badge ${statusClass(String(row.ket || "").replace("ILEGAL (BARU TERPASANG)", "ILEGAL"))}">${escapeHtml(row.ket || "-")}</span></td>
+          <td>${fmt(row.potensiKwh)}</td>
+          <td>${rupiah(rp)}</td>
+        </tr>`;
+      }).join("");
+    }
+    function fillForm(asset) {
+      if (!asset) return clearForm();
+      els.recordId.value = asset.id;
+      fields.forEach(name => {
+        const input = document.querySelector(`#${cssEscape(name)}`);
+        if (input) input.value = asset[name] ?? "";
+      });
+      els.formTitle.textContent = `Edit ${asset.id}`;
+      els.deleteBtn.hidden = false;
+    }
+    function clearForm() {
+      els.form.reset();
+      els.recordId.value = "";
+      document.querySelector("#id").value = nextId();
+      document.querySelector("#source").value = "Baru Terpasang";
+      document.querySelector("#ulp").value = "KONAWE SELATAN";
+      document.querySelector("#status").value = "ILEGAL";
+      document.querySelector("#lampType").value = "LED";
+      document.querySelector("#lampCount").value = 1;
+      document.querySelector("#watt").value = 100;
+      document.querySelector("#ballast").value = 0;
+      document.querySelector("#totalWatt").value = 100;
+      document.querySelector("#kwhTs").value = 37.5;
+      els.formTitle.textContent = "Tambah Titik";
+      els.deleteBtn.hidden = true;
+      selectedId = "";
+      renderDetail(null);
+    }
+    function nextId() {
+      const max = assets.reduce((num, asset) => {
+        const match = String(asset.id).match(/(\d+)$/);
+        return Math.max(num, match ? Number(match[1]) : 0);
+      }, 0);
+      return `BT-${String(max + 1).padStart(3, "0")}`;
+    }
+    function formData() {
+      return Object.fromEntries(fields.map(name => {
+        const input = document.querySelector(`#${cssEscape(name)}`);
+        const value = input?.value ?? "";
+        return [name, input?.type === "number" ? Number(value || 0) : String(value).trim()];
+      }));
+    }
+    function saveAsset(event) {
+      event.preventDefault();
+      const data = formData();
+      if (!data.totalWatt) data.totalWatt = Number(data.lampCount || 0) * (Number(data.watt || 0) + Number(data.ballast || 0));
+      const duplicate = assets.find(asset => asset.id === data.id && asset.id !== els.recordId.value);
+      if (duplicate) return showToast("ID titik sudah digunakan.");
+      const index = assets.findIndex(asset => asset.id === els.recordId.value);
+      if (index >= 0) assets[index] = data;
+      else assets.unshift(data);
+      selectedId = data.id;
+      persist();
+      render();
+      showToast("Data titik tersimpan.");
+    }
+    function deleteSelected() {
+      if (!els.recordId.value) return;
+      const asset = assets.find(item => item.id === els.recordId.value);
+      if (!confirm(`Hapus ${asset?.id || "titik"} dari data rekon?`)) return;
+      assets = assets.filter(item => item.id !== els.recordId.value);
+      selectedId = assets[0]?.id || "";
+      persist();
+      render();
+      showToast("Titik dihapus.");
+    }
+    function duplicateAsset(id) {
+      const asset = assets.find(item => item.id === id);
+      if (!asset) return;
+      const copy = { ...asset, id: nextId(), kelurahan: `${asset.kelurahan} (salinan)` };
+      assets.unshift(copy);
+      selectedId = copy.id;
+      persist();
+      render();
+      showToast("Titik diduplikasi.");
+    }
+    function exportCsv() {
+      const header = fields.join(",");
+      const rows = assets.map(asset => fields.map(field => csvCell(asset[field])).join(","));
+      const blob = new Blob([[header, ...rows].join("\n")], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `rekon-pju-ilegal-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+      showToast("CSV diekspor.");
+    }
+    function importCsv(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const lines = String(reader.result).split(/\r?\n/).filter(Boolean);
+        const headers = parseCsvLine(lines.shift() || "");
+        const imported = lines.map(line => {
+          const values = parseCsvLine(line);
+          const row = Object.fromEntries(headers.map((header, index) => [header, values[index] || ""]));
+          for (const key of ["lampCount","watt","ballast","totalWatt","kwhTs","lat","lng"]) row[key] = Number(row[key] || 0);
+          return row;
+        }).filter(row => row.id && row.kecamatan);
+        if (!imported.length) return showToast("CSV tidak berisi data PJU valid.");
+        assets = [...imported, ...assets];
+        selectedId = imported[0].id;
+        persist();
+        render();
+        showToast(`${imported.length} titik diimpor.`);
+      };
+      reader.readAsText(file);
+    }
+    function parseCsvLine(line) {
+      const cells = [];
+      let cell = "";
+      let quoted = false;
+      for (let i = 0; i < line.length; i += 1) {
+        const char = line[i];
+        if (char === '"' && line[i + 1] === '"') { cell += '"'; i += 1; }
+        else if (char === '"') quoted = !quoted;
+        else if (char === "," && !quoted) { cells.push(cell); cell = ""; }
+        else cell += char;
+      }
+      cells.push(cell);
+      return cells;
+    }
+    function csvCell(value) {
+      const text = String(value ?? "");
+      return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+    }
+    function sum(list, key) { return list.reduce((total, item) => total + Number(item[key] || 0), 0); }
+    function fmt(value) { return Number(value || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 }); }
+    function rupiah(value) { return Number(value || 0).toLocaleString("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }); }
+    function escapeHtml(value) { return String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char])); }
+    function escapeAttr(value) { return escapeHtml(value).replace(/`/g, "&#096;"); }
+    function cssEscape(value) { return String(value).replace(/[^a-zA-Z0-9_-]/g, "\\$&"); }
+    let toastTimer;
+    function showToast(message) {
+      clearTimeout(toastTimer);
+      els.toast.textContent = message;
+      els.toast.classList.add("show");
+      toastTimer = setTimeout(() => els.toast.classList.remove("show"), 2200);
+    }
+    document.querySelector("#newBtn").addEventListener("click", clearForm);
+    document.querySelector("#clearBtn").addEventListener("click", clearForm);
+    document.querySelector("#deleteBtn").addEventListener("click", deleteSelected);
+    document.querySelector("#exportBtn").addEventListener("click", exportCsv);
+    document.querySelector("#importBtn").addEventListener("click", () => els.csvInput.click());
+    document.querySelector("#resetBtn").addEventListener("click", () => {
+      if (!confirm("Muat ulang data dari Excel dan ganti data saat ini?")) return;
+      assets = cloneInitial();
+      selectedId = assets[0]?.id || "";
+      persist();
+      render();
+      showToast("Data Excel dimuat ulang.");
+    });
+    els.csvInput.addEventListener("change", event => {
+      const file = event.target.files?.[0];
+      if (file) importCsv(file);
+      event.target.value = "";
+    });
+    [els.search, els.sourceFilter, els.statusFilter, els.areaFilter, els.sortBy].forEach(input => input.addEventListener("input", render));
+    els.hargaKwh.addEventListener("input", renderSimulation);
+    document.querySelectorAll(".nav button").forEach((button, index) => {
+      const targets = ["#dashboardPanel", "#titikPanel", "#petaPanel", "#simulasiPanel"];
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".nav button").forEach(item => item.classList.remove("active"));
+        button.classList.add("active");
+        document.querySelector(targets[index])?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+    els.form.addEventListener("submit", saveAsset);
+    els.rows.addEventListener("click", event => {
+      const button = event.target.closest("button[data-action]");
+      const row = event.target.closest("tr[data-id]");
+      const id = button?.dataset.id || row?.dataset.id;
+      if (!id) return;
+      if (button?.dataset.action === "copy") return duplicateAsset(id);
+      selectedId = id;
+      fillForm(assets.find(asset => asset.id === id));
+      render();
+    });
+    els.markers.addEventListener("click", event => {
+      const marker = event.target.closest(".marker");
+      if (!marker) return;
+      selectedId = marker.dataset.id;
+      fillForm(assets.find(asset => asset.id === selectedId));
+      render();
+    });
+    document.querySelector("#lampCount").addEventListener("input", recalcTotal);
+    document.querySelector("#watt").addEventListener("input", recalcTotal);
+    document.querySelector("#ballast").addEventListener("input", recalcTotal);
+    function recalcTotal() {
+      const count = Number(document.querySelector("#lampCount").value || 0);
+      const watt = Number(document.querySelector("#watt").value || 0);
+      const ballast = Number(document.querySelector("#ballast").value || 0);
+      document.querySelector("#totalWatt").value = count * (watt + ballast);
+    }
+    persist();
+    render();
+  </script>
+</body>
+</html>
